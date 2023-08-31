@@ -19,6 +19,9 @@ async def create_profile_db(user_id,password):
 async def get_password(user_id):
     return cur.execute("SELECT password FROM profile WHERE user_id == ?",(user_id,)).fetchone()[0]
 
+async def set_password(user_id,new_password):
+    cur.execute("UPDATE profile SET password = ? WHERE user_id == ?",(new_password,user_id,))
+
 async def find_user(user_id):
     return cur.execute("SELECT user_id FROM profile WHERE user_id == ?",(user_id,)).fetchone()
     
