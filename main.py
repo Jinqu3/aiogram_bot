@@ -8,7 +8,7 @@ from aiogram.dispatcher.filters import Text
 
 import sqlite as sq
 from config import TOKEN
-
+import hashlib
 
 storage = MemoryStorage()
 bot = Bot(token=TOKEN)
@@ -88,9 +88,10 @@ async def cancel(message : types.Message,state :FSMContext):
     else:
         await message.answer("Продолжим заполнение профиля",reply_markup=get_cancel())
 
-@dp.message_handler(Text(equals=['Да','Нет']),state= '*')
+@dp.message_handler(Text(equals=['Да','Нет']),state= [ProfileStatesGroup.login,ProfileStatesGroup.registration])
 async def cancel(message : types.Message,state :FSMContext):
     await message.answer("Отменил операцию",reply_markup=get_keyboard())
+    await state.finish()
 """
 Хендлеры Регистрации
 """
@@ -104,11 +105,13 @@ async def registration(message:types.Message):
 
 @dp.message_handler(state=ProfileStatesGroup.registration)
 async def registration(message:types.Message,state : FSMContext):
+    password = hashlib.md5(message.text.encode()).hexdigest()
     if await sq.find_user(message.from_user.id):
-        await sq.set_password(message.from_user.id,message.text)
-        await message.answer("Смена пароля произошла успешно!",reply_markup=create_keyboard())
+        await sq.set_password(message.from_user.id,password)
+        await message.answer("Смена пароля произошла успешно!")
+        await message.answer("Теперь ты можешь настроить свой профиль,для этого напиши команду /create",reply_markup=create_keyboard())
     else:
-        await sq.create_profile_db(message.from_user.id,message.text)
+        await sq.create_profile_db(message.from_user.id,password)
         await message.answer("Регистрация прошла успешно,теперь ты можешь настроить свой профиль,для этого напиши команду /create",reply_markup=create_keyboard())
     await state.finish()
 """
@@ -141,7 +144,8 @@ async def change_password(message: types.Message):
         
 @dp.message_handler(state=ProfileStatesGroup.login)
 async def login(message:types.Message,state : FSMContext):
-    if message.text != await sq.get_password(message.from_user.id):
+    password = hashlib.md5(message.text.encode()).hexdigest()
+    if password != await sq.get_password(message.from_user.id):
         await message.answer("Неправильный пароль,попробуй ещё раз",reply_markup=login_keyboard())
     else:
         await message.answer("Вход прошёл успешно,теперь ты можешь настроить свой профиль,для этого напиши команду /create",reply_markup=create_keyboard())
