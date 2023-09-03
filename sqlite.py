@@ -6,9 +6,9 @@ async def db_start():
 
     db = sqlite3.connect(path_db)
     cur = db.cursor()
-
-    cur.execute("CREATE TABLE IF NOT EXISTS profile(user_id INT PRIMARY KEY,photo TEXT,age TEXT,description TEXT,name TEXT,password TEXT)")
     
+    cur.execute("CREATE TABLE IF NOT EXISTS profile(user_id INT PRIMARY KEY,photo TEXT,age TEXT,description TEXT,name TEXT,password TEXT)")
+
     db.commit()
 
 async def create_profile_db(user_id,password):
@@ -21,6 +21,7 @@ async def get_password(user_id):
 
 async def set_password(user_id,new_password):
     cur.execute("UPDATE profile SET password = ? WHERE user_id == ?",(new_password,user_id,))
+    db.commit()
 
 async def find_user(user_id):
     return cur.execute("SELECT user_id FROM profile WHERE user_id == ?",(user_id,)).fetchone()
